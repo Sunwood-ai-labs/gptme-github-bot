@@ -16,7 +16,7 @@ inputs:
   allowlist:
     description: 'Comma-separated list of GitHub usernames allowed to trigger the bot'
     required: true
-    default: 'ErikBjare'
+    default: 'Sunwood-ai-labs'
 
 runs:
   using: "composite"
@@ -100,6 +100,14 @@ runs:
           git checkout -b $BRANCH_NAME
         fi
         echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
+
+    - name: Prepare directories and permissions
+      shell: bash
+      run: |
+        mkdir -p ~/.config/gptme
+        mkdir -p ~/.local/share/gptme
+        chmod -R 777 ~/.config/gptme
+        chmod -R 777 ~/.local/share/gptme
 
     - name: Write gptme config.toml
       shell: bash
@@ -215,6 +223,21 @@ runs:
 
         # stage changes
         git add -A
+
+    - name: Prepare script permissions
+      if: steps.detect_command.outputs.gptme_command
+      shell: bash
+      run: |
+        # Ensure scripts directory exists
+        mkdir -p scripts
+        
+        # Download format_log.sh if it doesn't exist
+        if [ ! -f ./scripts/format_log.sh ]; then
+          curl -o ./scripts/format_log.sh https://raw.githubusercontent.com/ErikBjare/gptme/master/scripts/format_log.sh
+        fi
+        
+        # Make script executable
+        chmod +x ./scripts/format_log.sh
 
     - name: Commit, push, comment
       if: steps.detect_command.outputs.gptme_command && steps.determine_action.outputs.action_type == 'make_changes'
